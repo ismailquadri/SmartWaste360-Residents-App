@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Landmark, Sparkles } from "lucide-react";
+import { Award, Camera, Check, EyeOff, Landmark, ShieldAlert, Sparkles } from "lucide-react";
 import { useId, useState } from "react";
 import { z } from "zod";
 import { PageTitle, Phone } from "@/components/app";
@@ -15,32 +15,48 @@ import {
 import { meta } from "@/lib/meta";
 import { REPORT_CATEGORIES, type ReportDraft } from "@/lib/report-ai";
 import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/report")({
-  validateSearch: z.object({ mode: z.enum(["voice", "text"]).optional() }),
-  head: () => meta("Report an issue", "Speak in Pidgin, Yorùbá, Igbo, Hausa or English to report illegal dumping."),
+  validateSearch: z.object({ mode: z.enum(["voice", "text", "whistle"]).optional() }),
+  head: () => meta("Report & Whistleblower", "Speak in Pidgin, Yorùbá, Igbo, Hausa or submit an EXIF-scrubbed whistleblower tip."),
   component: ReportPage,
 });
 
 const modeOptions = [
-  { value: "voice" as const, label: "Voice Agent" },
-  { value: "text" as const, label: "Type Report" },
+  { value: "voice" as const, label: "Voice" },
+  { value: "text" as const, label: "Type" },
+  { value: "whistle" as const, label: "Whistleblower" },
+] as const;
+
+const whistleCategories = [
+  "Night-Time Illegal Dump",
+  "Doorstep Cash Extortion",
+  "Unregistered Cart Pusher",
+  "Blocked Canal / Drainage Dump",
 ] as const;
 
 function ReportPage() {
   const search = Route.useSearch();
-  const { partner, premise, report } = useStore();
-  const [mode, setMode] = useState<"voice" | "text">(search.mode ?? "voice");
+  const { model, partner, premise, report, submitWhistleblower } = useStore();
+  const [mode, setMode] = useState<"voice" | "text" | "whistle">(search.mode ?? "voice");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [sent, setSent] = useState("");
+  const [whistleCat, setWhistleCat] = useState<string>(whistleCategories[0]);
+  const [whistleCorridor, setWhistleCorridor] = useState<string>(premise?.area ?? "Alimosho Canal Axis");
+  const [exifStrippedPhoto, setExifStrippedPhoto] = useState(true);
 
   const descId = useId();
   const catId = useId();
   const titleId = useId();
   const bodyId = useId();
+  const wCatId = useId();
+  const wLocId = useId();
+
+  const tips = model.whistleblowerTickets ?? [];
 
   const runTextDraft = async () => {
     setBusy(true);
@@ -102,7 +118,103 @@ function ReportPage() {
           onChange={(next) => setMode(next)}
         />
 
-        {mode === "voice" ? (
+        {mode === "whistle" ? (
+          <div className="space-y-4">
+            <div className="rounded-[18px] bg-gradient-to-br from-[#17593a] to-[#0f3f29] p-4 text-white">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-emerald-200">
+                  <EyeOff className="size-3.5" aria-hidden="true" />
+                  Zero-Knowledge Anti-Retaliation Vault
+                </span>
+                <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold">₦10,000 Bounty</span>
+              </div>
+              <p className="mt-2 text-[14px] leading-snug text-white/90">
+                Your phone number is one-way hashed (<code className="font-mono text-emerald-200">zk-msisdn-*</code>) and photo EXIF/IMEI metadata is scrubbed locally before LAWMA I&amp;E receives it.
+              </p>
+            </div>
+
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!whistleCorridor.trim()) return;
+                submitWhistleblower(whistleCat, whistleCorridor.trim());
+              }}
+            >
+              <IosSection header="Sealed whistleblower evidence">
+                <div className="px-4 py-3">
+                  <label htmlFor={wCatId} className="block text-[12px] font-semibold text-muted-foreground">
+                    Offence category
+                  </label>
+                  <select
+                    id={wCatId}
+                    value={whistleCat}
+                    onChange={(e) => setWhistleCat(e.target.value)}
+                    className="mt-1 w-full bg-transparent text-[16px] font-medium text-foreground focus:outline-none"
+                  >
+                    {whistleCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="px-4 py-3">
+                  <label htmlFor={wLocId} className="block text-[12px] font-semibold text-muted-foreground">
+                    Locus / street / canal coordinates
+                  </label>
+                  <input
+                    id={wLocId}
+                    type="text"
+                    required
+                    value={whistleCorridor}
+                    onChange={(e) => setWhistleCorridor(e.target.value)}
+                    placeholder="e.g. Egbeda Canal Culvert 4"
+                    className="mt-1 w-full bg-transparent text-[16px] text-foreground focus:outline-none"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div>
+                    <p className="text-[14px] font-medium text-foreground">EXIF &amp; Device ID Scrubbed</p>
+                    <p className="text-[12px] text-muted-foreground">Silent shutter · No reporter GPS stamp</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExifStrippedPhoto((v) => !v)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold",
+                      exifStrippedPhoto ? "bg-[#17593a] text-white" : "bg-[#e5e5ea] text-foreground",
+                    )}
+                  >
+                    <Camera className="size-3.5" aria-hidden="true" />
+                    {exifStrippedPhoto ? "Verified Clean" : "Attach Photo"}
+                  </button>
+                </div>
+              </IosSection>
+
+              <IosButton type="submit" tone="ember" disabled={!whistleCorridor.trim()}>
+                <ShieldAlert className="mr-1.5 size-4" aria-hidden="true" />
+                Seal &amp; Submit Anonymous Tip
+              </IosButton>
+            </form>
+
+            {tips.length > 0 && (
+              <IosSection header="Blind bounty receipts" footer="Identity stays cryptographically decoupled from bounty payout.">
+                {tips.map((t) => (
+                  <IosRow
+                    key={t.id}
+                    icon={<Award className="size-4" />}
+                    iconTone="forest"
+                    title={`${t.id} · ${t.category}`}
+                    subtitle={`${t.corridor} · ${t.hashedMsisdn} · EXIF Clean`}
+                    detail="₦10,000"
+                    trailing={<IosBadge>{t.bountyStatus === "Blind Escrow Locked" ? "Active" : "Paid"}</IosBadge>}
+                  />
+                ))}
+              </IosSection>
+            )}
+          </div>
+        ) : mode === "voice" ? (
           <LocalVoiceAgent
             address={premise?.address}
             area={premise?.area}

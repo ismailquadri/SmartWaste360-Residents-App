@@ -176,13 +176,13 @@ function You() {
           )}
         </section>
 
-        <IosSection header="Collection partner">
+        <IosSection header="Statutory Ward PSP (Sec. 71 EMPL 2017)" footer="Ward franchises are assigned by Lagos State Law. Transfers require LAWMA Compliance review for repeated SLA breaches.">
           <IosRow
             leading={<PartnerLogo partnerId={partner?.id} name={partner?.name} size="md" />}
             title={partner?.name ?? "None selected"}
-            subtitle={pending ? `Change to ${pending.name} awaiting LAWMA approval` : partner?.area}
+            subtitle={pending ? `SLA Transfer to ${pending.name} awaiting LAWMA review` : partner?.area}
             detail={partner ? money(partner.charge) : undefined}
-            trailing={pending ? <IosBadge>Pending</IosBadge> : undefined}
+            trailing={pending ? <IosBadge>Pending</IosBadge> : <IosBadge>Statutory</IosBadge>}
           />
 
           {!pending && (
@@ -191,8 +191,8 @@ function You() {
                 setChangeErr(null);
                 setShowTransfer(true);
               }}
-              title="Request partner transfer"
-              subtitle="Switch to another licensed PSP operator"
+              title="Petition Ward PSP SLA Transfer"
+              subtitle="Escalate uncollected sweeps to LAWMA Compliance"
               disclosure
             />
           )}

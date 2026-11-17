@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, Trash2 } from "lucide-react";
+import { Lock, Package, QrCode, ShoppingBag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { PageTitle, Phone } from "@/components/app";
 import { PartnerLogo } from "@/components/PartnerLogo";
@@ -13,6 +13,7 @@ import {
   IosStepper,
 } from "@/components/ios";
 import { meta } from "@/lib/meta";
+import { createDefaultCompound, evaluateCompoundQuorum } from "@/lib/resident-ops";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/bins")({
@@ -27,16 +28,20 @@ const sizes = [
 ] as const;
 
 function Bins() {
-  const { model, partner, requestBins } = useStore();
+  const { model, partner, premise, requestBins } = useStore();
   const [size, setSize] = useState<number>(240);
   const [qty, setQty] = useState(1);
   const room = Math.max(0, 5 - model.bins.length);
+  const compound = model.compound ?? createDefaultCompound();
+  const quorum = evaluateCompoundQuorum(compound.rooms, compound.quorumThresholdPct);
+  const myRoom = compound.rooms.find((r) => r.duid === compound.myRoomDuid) ?? compound.rooms[1];
+  const isCompound = premise?.id === "HOME-042" || model.bins.some((b) => b.id === "BIN-1042");
 
   return (
     <Phone>
       <PageTitle
-        title="My smart bins"
-        sub={partner ? `Delivered and serviced by ${partner.name}.` : undefined}
+        title="Bins & Green Bags"
+        sub={partner ? `Serviced by Statutory Ward PSP ${partner.name}.` : undefined}
       />
 
       {partner && (
@@ -47,6 +52,48 @@ function Bins() {
       )}
 
       <div className="space-y-6">
+        {isCompound && myRoom && (
+          <IosSection
+            header="My Green Collection Bags (Quarantine Bypass)"
+            footer="When a compound drum is quarantined (<60% room quorum), settled rooms hand serialized Green QR Bags directly to the PSP compactor crew."
+          >
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[11px] bg-[#17593a] text-white">
+                    <ShoppingBag className="size-5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-[15px] font-semibold text-foreground">
+                      Serialized Room Bag Pass · {myRoom.roomLabel}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[12px] font-semibold text-[#17593a]">
+                      {myRoom.bagQrCode}
+                    </p>
+                    <p className="mt-1 text-[12px] text-muted-foreground">
+                      Roll status: 14 of 20 bags left · Linked to {myRoom.virtualAccount}
+                    </p>
+                  </div>
+                </div>
+                <IosBadge>{quorum.isQuarantined ? "Active" : "Paid"}</IosBadge>
+              </div>
+              {quorum.isQuarantined && (
+                <div className="mt-3 flex items-center gap-2 rounded-[10px] bg-[#fef3f2] px-3 py-2 text-[12px] font-medium text-[#912018]">
+                  <Lock className="size-3.5 shrink-0" aria-hidden="true" />
+                  Communal bins BIN-1042/1043 quarantined ({quorum.quorumPct}% quorum). Show this QR on truck arrival.
+                </div>
+              )}
+              <div className="mt-3 flex items-center justify-between rounded-[12px] bg-[#e8f3ec] px-3 py-2.5 text-[12px] text-[#12472e]">
+                <span className="inline-flex items-center gap-1.5 font-semibold">
+                  <QrCode className="size-4" aria-hidden="true" />
+                  Scan-at-Hopper Verified
+                </span>
+                <span className="font-mono">{compound.myRoomDuid}</span>
+              </div>
+            </div>
+          </IosSection>
+        )}
+
         {model.bins.length === 0 ? (
           <IosEmpty icon={<Package className="size-5" />} title="No smart bins yet">
             Request your first household bin below to start scheduled pickups.
