@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, Package, QrCode, ShoppingBag, Trash2 } from "lucide-react";
+import { Leaf, Lock, Package, QrCode, Recycle, ShoppingBag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { PageTitle, Phone } from "@/components/app";
 import { PartnerLogo } from "@/components/PartnerLogo";
@@ -13,7 +13,12 @@ import {
   IosStepper,
 } from "@/components/ios";
 import { meta } from "@/lib/meta";
-import { createDefaultCompound, evaluateCompoundQuorum } from "@/lib/resident-ops";
+import {
+  createDefaultCompound,
+  evaluateCompoundQuorum,
+  WASTE_STREAMS,
+  type WasteStream,
+} from "@/lib/resident-ops";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/bins")({
@@ -31,11 +36,13 @@ function Bins() {
   const { model, partner, premise, requestBins } = useStore();
   const [size, setSize] = useState<number>(240);
   const [qty, setQty] = useState(1);
+  const [stream, setStream] = useState<WasteStream>("blue_recyclables");
   const room = Math.max(0, 5 - model.bins.length);
   const compound = model.compound ?? createDefaultCompound();
   const quorum = evaluateCompoundQuorum(compound.rooms, compound.quorumThresholdPct);
   const myRoom = compound.rooms.find((r) => r.duid === compound.myRoomDuid) ?? compound.rooms[1];
   const isCompound = premise?.id === "HOME-042" || model.bins.some((b) => b.id === "BIN-1042");
+  const activeStream = WASTE_STREAMS.find((s) => s.id === stream) ?? WASTE_STREAMS[0]!;
 
   return (
     <Phone>
@@ -112,6 +119,43 @@ function Bins() {
             ))}
           </IosSection>
         )}
+
+        <IosSection
+          header="3-Stream Source Segregation"
+          footer="Separating dry recyclables (Blue) and organics (Green) keeps valuable material out of landfills and credits your wallet."
+        >
+          <div className="p-4">
+            <IosSegmentedControl
+              label="Waste stream"
+              value={stream}
+              onChange={setStream}
+              options={[
+                { value: "blue_recyclables" as const, label: "Blue Box" },
+                { value: "green_organic" as const, label: "Organics" },
+                { value: "black_residual" as const, label: "Residual" },
+              ]}
+            />
+            <div className="mt-3 rounded-[12px] bg-[#f2f2f7] p-3.5 text-[13px]">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                {stream === "blue_recyclables" ? (
+                  <Recycle className="size-4 text-[#007aff]" aria-hidden="true" />
+                ) : stream === "green_organic" ? (
+                  <Leaf className="size-4 text-[#17593a]" aria-hidden="true" />
+                ) : (
+                  <Trash2 className="size-4 text-[#5c5c62]" aria-hidden="true" />
+                )}
+                <span>{activeStream.title}</span>
+              </div>
+              <p className="mt-1.5 text-muted-foreground">
+                <strong>Items:</strong> {activeStream.examples}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                <strong>Route:</strong> {activeStream.destination}
+              </p>
+              <p className="mt-1 font-medium text-[#17593a]">{activeStream.incentiveNote}</p>
+            </div>
+          </div>
+        </IosSection>
 
         {room > 0 && (
           <IosSection

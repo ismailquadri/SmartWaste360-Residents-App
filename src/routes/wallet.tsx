@@ -11,6 +11,7 @@ import {
   Lock,
   Plus,
   QrCode,
+  Recycle,
   ShieldCheck,
   Smartphone,
   Store,
@@ -31,10 +32,15 @@ import { money } from "@/lib/customer-model";
 import { meta } from "@/lib/meta";
 import {
   buildUssdDialString,
+  CIRCULAR_HUBS,
   createDefaultCompound,
+  defaultCircularDrops,
+  evaluateCircularSummary,
   evaluateCompoundQuorum,
+  RECYCLABLE_RATES,
   type KioskProvider,
   type KioskVoucher,
+  type MaterialType,
 } from "@/lib/resident-ops";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -61,8 +67,8 @@ const filterOptions = [
 ] as const;
 
 function WalletPage() {
-  const { model, topUp, settleRoom, applySec44Shield, createPosVoucher } = useStore();
-  const [sheet, setSheet] = useState<null | "amount" | "method" | "done" | "kiosk" | "ussd">(null);
+  const { model, topUp, settleRoom, applySec44Shield, createPosVoucher, logCircularDrop } = useStore();
+  const [sheet, setSheet] = useState<null | "amount" | "method" | "done" | "kiosk" | "ussd" | "recycle">(null);
   const [amount, setAmount] = useState<number>(5000);
   const [filter, setFilter] = useState<Filter>("all");
   const [kioskProvider, setKioskProvider] = useState<KioskProvider>("Moniepoint");
@@ -70,6 +76,11 @@ function WalletPage() {
     () => model.kioskVouchers?.[0] ?? null,
   );
   const [sec44AppliedMsg, setSec44AppliedMsg] = useState<string | null>(null);
+  const [dropHub, setDropHub] = useState<string>(CIRCULAR_HUBS[0]!.id);
+  const [dropMat, setDropMat] = useState<MaterialType>("PET");
+  const [dropKg, setDropKg] = useState<number>(4);
+  const [dropClean, setDropClean] = useState<boolean>(true);
+  const [dropStatusMsg, setDropStatusMsg] = useState<string | null>(null);
 
   const isIn = (k: string) => k === "credit" || k === "released";
   const entries = model.entries.filter((e) => filter === "all" || (filter === "in") === isIn(e.kind));
@@ -81,6 +92,8 @@ function WalletPage() {
   const compound = model.compound ?? createDefaultCompound();
   const quorum = evaluateCompoundQuorum(compound.rooms, compound.quorumThresholdPct);
   const activeVouchers = model.kioskVouchers ?? [];
+  const circularDrops = model.recyclableDrops ?? defaultCircularDrops();
+  const circular = evaluateCircularSummary(circularDrops, 750);
 
   return (
     <Phone>
@@ -240,6 +253,24 @@ function WalletPage() {
           </div>
         )}
 
+        <IosSection
+          header="Trash-to-Cash & MRF Buy-Back"
+          footer="Drop clean sorted PET, Aluminum, HDPE, Cardboard, or Organics at any hub or Keke feeder to credit VACC and offset PSP bills."
+        >
+          <IosRow
+            onClick={() => {
+              setDropStatusMsg(null);
+              setSheet("recycle");
+            }}
+            icon={<Recycle className="size-4" />}
+            iconTone="green"
+            title="Log Recyclables / Keke Drop"
+            subtitle={`${circular.totalKg}kg diverted (${circular.co2SavedKg}kg CO₂) · Offsets ${circular.feeOffsetPct}% of room fee`}
+            detail={`+${money(circular.totalEarnedNgn)}`}
+            disclosure
+          />
+        </IosSection>
+
         <IosSection header="Offline Cash & USSD Channels" footer="Unbanked or low-data residents pay zero transfer fees via Kiosk vouchers or *384*7006#.">
           <IosRow
             onClick={() => setSheet("kiosk")}
@@ -325,9 +356,99 @@ function WalletPage() {
                 ? "POS Kiosk Cash Voucher"
                 : sheet === "ussd"
                   ? "Offline USSD (*384*7006#)"
-                  : "Top-up complete"
+                  : sheet === "recycle"
+                    ? "Trash-to-Cash Buy-Back"
+                    : "Top-up complete"
         }
       >
+        {sheet === "recycle" && (
+          <div className="space-y-4 pt-1">
+            <IosSection header="Select feeder / micro-hub">
+              {CIRCULAR_HUBS.map((h) => (
+                <IosRow
+                  key={h.id}
+                  onClick={() => setDropHub(h.id)}
+                  icon={<Recycle className="size-4" />}
+                  iconTone="forest"
+                  title={h.name}
+                  subtitle={h.schedule}
+                  detail={h.distanceLabel}
+                  selected={dropHub === h.id}
+                />
+              ))}
+            </IosSection>
+
+            <IosSection header="Material & weight">
+              {(Object.keys(RECYCLABLE_RATES) as MaterialType[]).map((mId) => {
+                const tariff = RECYCLABLE_RATES[mId];
+                return (
+                  <IosRow
+                    key={mId}
+                    onClick={() => setDropMat(mId)}
+                    title={tariff.label}
+                    subtitle={`Saves ${tariff.co2FactorKgPerKg} kg CO₂e / kg`}
+                    detail={`${money(tariff.ratePerKgNgn)}/kg`}
+                    selected={dropMat === mId}
+                  />
+                );
+              })}
+              <div className="flex items-center justify-between gap-2 px-4 py-3">
+                <span className="text-[14px] font-medium text-foreground">Measured weight (kg)</span>
+                <div className="flex gap-1.5">
+                  {[2, 4, 8, 12].map((kg) => (
+                    <button
+                      key={kg}
+                      type="button"
+                      onClick={() => setDropKg(kg)}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[12px] font-semibold",
+                        dropKg === kg ? "bg-[#17593a] text-white" : "bg-[#e5e5ea] text-foreground",
+                      )}
+                    >
+                      {kg} kg
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2 px-4 py-3">
+                <div>
+                  <p className="text-[14px] font-medium text-foreground">Clean source-sorted load</p>
+                  <p className="text-[12px] text-muted-foreground">Unsoiled loads receive full MRF buy-back credit</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDropClean((v) => !v)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-[12px] font-semibold",
+                    dropClean ? "bg-[#248a3d] text-white" : "bg-[#d92d20] text-white",
+                  )}
+                >
+                  {dropClean ? "Clean Sort" : "Contaminated"}
+                </button>
+              </div>
+            </IosSection>
+
+            {dropStatusMsg && (
+              <div role="status" className="rounded-[14px] bg-[#e8f3ec] p-3 text-[13px] font-medium text-[#12472e]">
+                {dropStatusMsg}
+              </div>
+            )}
+
+            <IosButton
+              tone="primary"
+              onClick={() => {
+                const res = logCircularDrop(dropHub, dropMat, dropKg, dropClean);
+                setDropStatusMsg(
+                  res.earnedNgn > 0
+                    ? `Credited +${money(res.earnedNgn)} (${res.weightKg}kg ${res.materialId}) to your wallet!`
+                    : `Contaminated ${res.materialId} drop recorded at ₦0 — rinse/segregate before next drop.`,
+                );
+              }}
+            >
+              Credit {dropClean ? money(Math.round(dropKg * RECYCLABLE_RATES[dropMat].ratePerKgNgn)) : "₦0 (Contaminated)"} to Wallet
+            </IosButton>
+          </div>
+        )}
         {sheet === "kiosk" && (
           <div className="space-y-4 pt-1">
             <IosSection header="Choose POS network">

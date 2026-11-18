@@ -9,12 +9,16 @@ import {
   corridorScheduleFor,
   createDefaultCompound,
   createWhistleblowerSubmission,
+  defaultCircularDrops,
   generateKioskVoucher,
+  recordCircularDrop,
   resolveCitizenRemediation,
   resolveStatutoryPartner,
   settleCompoundRoom,
   type KioskProvider,
   type KioskVoucher,
+  type MaterialType,
+  type RecyclableDrop,
   type WhistleblowerTicket,
 } from "./resident-ops";
 
@@ -48,6 +52,7 @@ type Store = {
   resolveRemediation: (id: string, action: "confirm" | "dispute", note?: string, counterPhoto?: boolean) => string | null;
   setStormForecast: (mm36h: number) => void;
   submitWhistleblower: (category: string, corridor: string) => WhistleblowerTicket;
+  logCircularDrop: (hubId: string, materialId: MaterialType, weightKg: number, cleanSort: boolean) => RecyclableDrop;
   loadPresetDemo: (preset: "tenement" | "commercial" | "residential") => void;
   reset: () => void;
 };
@@ -267,6 +272,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           notices: notice(s, `Anonymous tip ${ticket.id} sealed (EXIF stripped · ₦10,000 blind bounty queued).`),
         }));
         return ticket;
+      },
+      logCircularDrop(hubId, materialId, weightKg, cleanSort) {
+        const drop = recordCircularDrop(hubId, materialId, weightKg, cleanSort, stamp());
+        setModel((s) => {
+          const currentDrops = s.recyclableDrops ?? defaultCircularDrops();
+          return {
+            ...s,
+            balance: s.balance + drop.earnedNgn,
+            recyclableDrops: [drop, ...currentDrops],
+            entries: drop.earnedNgn > 0
+              ? [
+                  {
+                    id: newId("TX"),
+                    title: `Trash-to-Cash (${drop.weightKg}kg ${drop.materialId})`,
+                    amount: drop.earnedNgn,
+                    time: stamp(),
+                    kind: "credit",
+                  },
+                  ...s.entries,
+                ]
+              : s.entries,
+            notices: notice(
+              s,
+              cleanSort
+                ? `Circular credit: +${money(drop.earnedNgn)} for ${drop.weightKg}kg ${drop.materialId} (${drop.co2SavedKg}kg CO₂ saved).`
+                : `Contaminated drop logged (${drop.weightKg}kg ${drop.materialId}): rinse/sort clean for ₦ buy-back.`,
+            ),
+          };
+        });
+        return drop;
       },
       loadPresetDemo(preset) {
         const map = {

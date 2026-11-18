@@ -5,6 +5,7 @@ import {
   Camera,
   CheckCircle2,
   Clock,
+  Recycle,
   ShieldAlert,
   ShieldCheck,
   Truck,
@@ -20,9 +21,9 @@ import {
   IosRow,
   IosSection,
 } from "@/components/ios";
-import { money, OPEN_PICKUP } from "@/lib/customer-model";
+import { defaultRemediations, money, OPEN_PICKUP } from "@/lib/customer-model";
 import { meta } from "@/lib/meta";
-import { defaultRemediations } from "@/lib/customer-model";
+import { CIRCULAR_HUBS, defaultCircularDrops } from "@/lib/resident-ops";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -209,6 +210,32 @@ function ActivityPage() {
             />
           </IosSection>
         )}
+
+        <IosSection
+          header="Non-Linear Feeder & Buy-Back Network"
+          footer="Instead of waiting for compactor trucks alone, sorted Blue-Box & Organic streams flow via Keke feeders and community MRFs."
+        >
+          {CIRCULAR_HUBS.map((hub) => (
+            <IosRow
+              key={hub.id}
+              icon={<Recycle className="size-4" />}
+              iconTone={hub.kind === "Blue-Box MRF Kiosk" ? "blue" : hub.kind === "Keke Feeder Tricycle" ? "forest" : "green"}
+              title={hub.name}
+              subtitle={`${hub.kind} · ${hub.schedule}`}
+              detail={hub.distanceLabel}
+            />
+          ))}
+          {(model.recyclableDrops ?? defaultCircularDrops()).slice(0, 3).map((d) => (
+            <IosRow
+              key={d.id}
+              icon={<CheckCircle2 className="size-4" />}
+              iconTone="green"
+              title={`${d.weightKg}kg ${d.materialLabel}`}
+              subtitle={`${d.hubName} · ${d.timestamp} · ${d.co2SavedKg}kg CO₂ avoided`}
+              detail={`+${money(d.earnedNgn)}`}
+            />
+          ))}
+        </IosSection>
 
         {!open && partner && (
           <IosSection

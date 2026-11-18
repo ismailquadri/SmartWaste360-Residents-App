@@ -385,3 +385,198 @@ export function buildMerchantDecal(
     noCashExtortionRule: "Zero Cash on Doorstep · Pay ONLY to Verified LAWMA / PSP Virtual Account",
   };
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Non-Linear Circular Economy: Segregation, Keke Feeders & MRF Buy-Back     */
+/* -------------------------------------------------------------------------- */
+
+export type WasteStream = "blue_recyclables" | "green_organic" | "black_residual";
+export type MaterialType = "PET" | "ALUMINUM" | "HDPE" | "CARDBOARD" | "ORGANICS";
+
+export type StreamGuide = {
+  id: WasteStream;
+  title: string;
+  bagColor: string;
+  destination: string;
+  examples: string;
+  incentiveNote: string;
+};
+
+export const WASTE_STREAMS: StreamGuide[] = [
+  {
+    id: "blue_recyclables",
+    title: "Blue Bag · Dry Recyclables",
+    bagColor: "Blue",
+    destination: "Ward MRF / Buy-Back Kiosk & Keke Feeders",
+    examples: "Clean PET water bottles, aluminum cans, HDPE jerrycans, dry cartons",
+    incentiveNote: "Earns ₦120–₦650/kg Trash-to-Cash wallet credit",
+  },
+  {
+    id: "green_organic",
+    title: "Green Caddy · Organics & Food Waste",
+    bagColor: "Green",
+    destination: "Anaerobic Biogas / Compost Exchange Hub",
+    examples: "Market vegetable peels, cold-room spoilage, food scraps (no plastic)",
+    incentiveNote: "Earns ₦45/kg compost rebate & cuts canal methane",
+  },
+  {
+    id: "black_residual",
+    title: "Black Bin · Non-Recoverable Residual",
+    bagColor: "Black",
+    destination: "Statutory Ward PSP Compactor -> Lagos TLS",
+    examples: "Soiled wrappers, sanitary waste, ash, swept street grit",
+    incentiveNote: "Covered by monthly room DUID / statutory PSP levy",
+  },
+];
+
+export type MaterialTariff = {
+  id: MaterialType;
+  label: string;
+  stream: WasteStream;
+  ratePerKgNgn: number;
+  co2FactorKgPerKg: number;
+};
+
+export const RECYCLABLE_RATES: Record<MaterialType, MaterialTariff> = {
+  PET: { id: "PET", label: "PET Bottles (Clear/Green)", stream: "blue_recyclables", ratePerKgNgn: 180, co2FactorKgPerKg: 2.1 },
+  ALUMINUM: { id: "ALUMINUM", label: "Aluminum Cans", stream: "blue_recyclables", ratePerKgNgn: 650, co2FactorKgPerKg: 8.5 },
+  HDPE: { id: "HDPE", label: "HDPE Plastics & Jerrycans", stream: "blue_recyclables", ratePerKgNgn: 240, co2FactorKgPerKg: 1.9 },
+  CARDBOARD: { id: "CARDBOARD", label: "Clean Cardboard / Cartons", stream: "blue_recyclables", ratePerKgNgn: 120, co2FactorKgPerKg: 1.4 },
+  ORGANICS: { id: "ORGANICS", label: "Sorted Market & Kitchen Organics", stream: "green_organic", ratePerKgNgn: 45, co2FactorKgPerKg: 1.2 },
+};
+
+export type CircularHub = {
+  id: string;
+  name: string;
+  kind: "Blue-Box MRF Kiosk" | "Keke Feeder Tricycle" | "Compost & Biogas Hub";
+  distanceLabel: string;
+  schedule: string;
+  acceptedStreams: WasteStream[];
+};
+
+export const CIRCULAR_HUBS: CircularHub[] = [
+  {
+    id: "HUB-IKJ-01",
+    name: "Mainland Blue-Box Kiosk (Yaba Market Gate)",
+    kind: "Blue-Box MRF Kiosk",
+    distanceLabel: "350 m away",
+    schedule: "Daily 07:00–18:00 WAT · Instant VACC credit",
+    acceptedStreams: ["blue_recyclables"],
+  },
+  {
+    id: "HUB-KEK-02",
+    name: "Keke Feeder Tricycle (KEK-YAB-08)",
+    kind: "Keke Feeder Tricycle",
+    distanceLabel: "Inner-street loop",
+    schedule: "Tue, Thu & Sat 08:00–13:00 WAT · Doorstep MRF scale",
+    acceptedStreams: ["blue_recyclables", "green_organic"],
+  },
+  {
+    id: "HUB-BIO-03",
+    name: "Oyingbo Anaerobic Compost & Biogas Exchange",
+    kind: "Compost & Biogas Hub",
+    distanceLabel: "1.2 km away",
+    schedule: "Mon–Sat 07:30–16:30 WAT · Fertilizer & fee offset",
+    acceptedStreams: ["green_organic"],
+  },
+];
+
+export type RecyclableDrop = {
+  id: string;
+  hubId: string;
+  hubName: string;
+  materialId: MaterialType;
+  materialLabel: string;
+  stream: WasteStream;
+  weightKg: number;
+  cleanSort: boolean;
+  earnedNgn: number;
+  co2SavedKg: number;
+  timestamp: string;
+};
+
+export type CircularSummary = {
+  totalKg: number;
+  totalEarnedNgn: number;
+  co2SavedKg: number;
+  feeOffsetPct: number;
+  eprCommercialRebateEligible: boolean;
+};
+
+export function defaultCircularDrops(): RecyclableDrop[] {
+  return [
+    {
+      id: "MRF-DRP-801",
+      hubId: "HUB-IKJ-01",
+      hubName: "Mainland Blue-Box Kiosk (Yaba Market Gate)",
+      materialId: "PET",
+      materialLabel: "PET Bottles (Clear/Green)",
+      stream: "blue_recyclables",
+      weightKg: 6.5,
+      cleanSort: true,
+      earnedNgn: 1170,
+      co2SavedKg: 13.7,
+      timestamp: "2 days ago",
+    },
+    {
+      id: "MRF-DRP-802",
+      hubId: "HUB-KEK-02",
+      hubName: "Keke Feeder Tricycle (KEK-YAB-08)",
+      materialId: "ALUMINUM",
+      materialLabel: "Aluminum Cans",
+      stream: "blue_recyclables",
+      weightKg: 1.8,
+      cleanSort: true,
+      earnedNgn: 1170,
+      co2SavedKg: 15.3,
+      timestamp: "5 days ago",
+    },
+  ];
+}
+
+export function recordCircularDrop(
+  hubId: string,
+  materialId: MaterialType,
+  weightKg: number,
+  cleanSort: boolean,
+  timestamp = "Just now",
+  seed = Date.now(),
+): RecyclableDrop {
+  if (weightKg <= 0) {
+    throw new Error("Drop weight must be greater than 0 kg.");
+  }
+  const tariff = RECYCLABLE_RATES[materialId];
+  const hub = CIRCULAR_HUBS.find((h) => h.id === hubId) ?? CIRCULAR_HUBS[0]!;
+  const earnedNgn = cleanSort ? Math.round(weightKg * tariff.ratePerKgNgn) : 0;
+  const co2SavedKg = cleanSort ? Number((weightKg * tariff.co2FactorKgPerKg).toFixed(1)) : 0;
+  return {
+    id: `MRF-DRP-${Math.abs(seed % 900 + 100)}`,
+    hubId: hub.id,
+    hubName: hub.name,
+    materialId,
+    materialLabel: tariff.label,
+    stream: tariff.stream,
+    weightKg: Number(weightKg.toFixed(1)),
+    cleanSort,
+    earnedNgn,
+    co2SavedKg,
+    timestamp,
+  };
+}
+
+export function evaluateCircularSummary(
+  drops: RecyclableDrop[],
+  monthlyFeeNgn = 750,
+): CircularSummary {
+  const totalKg = Number(drops.reduce((s, d) => s + (d.cleanSort ? d.weightKg : 0), 0).toFixed(1));
+  const totalEarnedNgn = drops.reduce((s, d) => s + d.earnedNgn, 0);
+  const co2SavedKg = Number(drops.reduce((s, d) => s + d.co2SavedKg, 0).toFixed(1));
+  const feeOffsetPct = Math.min(100, Math.round((totalEarnedNgn / Math.max(1, monthlyFeeNgn)) * 100));
+  return {
+    totalKg,
+    totalEarnedNgn,
+    co2SavedKg,
+    feeOffsetPct,
+    eprCommercialRebateEligible: totalKg >= 25,
+  };
+}

@@ -2,12 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
   CloudRain,
+  Leaf,
   MapPin,
   Mic,
   Navigation,
   Package,
   QrCode,
   Radio,
+  Recycle,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -31,6 +33,8 @@ import { meta } from "@/lib/meta";
 import {
   buildMerchantDecal,
   createDefaultCompound,
+  defaultCircularDrops,
+  evaluateCircularSummary,
   evaluateCompoundQuorum,
   evaluateStormSurge,
 } from "@/lib/resident-ops";
@@ -300,6 +304,10 @@ function Home() {
   const pendingCure = (model.remediations ?? []).filter((r) => r.status === "Awaiting Citizen Key").length;
   const isCommercial = premise?.id === "SHOP-150";
   const isCompound = premise?.id === "HOME-042";
+  const circular = evaluateCircularSummary(
+    model.recyclableDrops ?? defaultCircularDrops(),
+    isCommercial ? 12500 : isCompound ? 750 : (partner?.charge ?? 1450),
+  );
 
   const decal = buildMerchantDecal(
     premise?.id ?? "SHOP-150",
@@ -460,6 +468,26 @@ function Home() {
         </Link>
       )}
 
+      <Link to="/wallet" className="ios-card mt-3 flex items-center justify-between gap-3 p-4 transition-transform active:scale-[0.99]">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="grid size-10 shrink-0 place-items-center rounded-[11px] bg-[#17593a] text-white">
+            <Recycle className="size-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[#17593a]">
+              Circular Diversion · Trash-to-Cash
+            </p>
+            <p className="mt-0.5 text-[14px] font-semibold text-foreground tabular-nums">
+              {circular.totalKg} kg diverted · +{money(circular.totalEarnedNgn)} earned
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {circular.co2SavedKg} kg CO₂e avoided · Offsets {circular.feeOffsetPct}% of monthly fee
+            </p>
+          </div>
+        </div>
+        <IosBadge>{isCommercial && circular.eprCommercialRebateEligible ? "Paid" : "Active"}</IosBadge>
+      </Link>
+
       <Link to="/wallet" className="wallet-balance mt-4 block transition-transform active:scale-[0.985]">
         <div className="flex items-center justify-between">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-white/75">
@@ -486,9 +514,9 @@ function Home() {
           />
           <IosRow
             to="/bins"
-            icon={<Package className="size-4" />}
+            icon={<Leaf className="size-4" />}
             iconTone="green"
-            title="Smart bins & Green QR bags"
+            title="Bins, 3-Stream Guide & QR Bags"
             detail={`${model.bins.length} drums`}
             disclosure
           />

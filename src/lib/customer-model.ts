@@ -1,9 +1,11 @@
 import type { HubMessage } from "./hub-contract";
 import {
   createDefaultCompound,
+  defaultCircularDrops,
   type CompoundState,
   type CorridorSweep,
   type KioskVoucher,
+  type RecyclableDrop,
   type RemediationCase,
   type WhistleblowerTicket,
 } from "./resident-ops";
@@ -40,6 +42,7 @@ export type Model = {
   remediations?: RemediationCase[] | undefined;
   kioskVouchers?: KioskVoucher[] | undefined;
   whistleblowerTickets?: WhistleblowerTicket[] | undefined;
+  recyclableDrops?: RecyclableDrop[] | undefined;
 };
 
 export const premises: Premise[] = [
@@ -96,6 +99,7 @@ export const blankModel = (customerId: string): Model => ({
   remediations: defaultRemediations(),
   kioskVouchers: [],
   whistleblowerTickets: [],
+  recyclableDrops: defaultCircularDrops(),
 });
 
 export const stamp = () => new Date().toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });

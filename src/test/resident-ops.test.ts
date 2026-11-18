@@ -5,9 +5,12 @@ import {
   buildUssdDialString,
   createDefaultCompound,
   createWhistleblowerSubmission,
+  defaultCircularDrops,
+  evaluateCircularSummary,
   evaluateCompoundQuorum,
   evaluateStormSurge,
   generateKioskVoucher,
+  recordCircularDrop,
   resolveCitizenRemediation,
   resolveStatutoryPartner,
   settleCompoundRoom,
@@ -102,5 +105,26 @@ describe("resident-ops Lagos street workflows", () => {
     const decal = buildMerchantDecal("SHOP-150", "Balogun Cold-Room Plaza", 12500, "PAR-004");
     expect(decal.decalCode).toBe("DECAL-QR-LAG-HOP150");
     expect(decal.statutoryLevyNgn).toBe(12500);
+  });
+
+  it("credits clean MRF recyclable drops, blocks contaminated drops, and computes fee offset + EPR rebate", () => {
+    const cleanPet = recordCircularDrop("HUB-IKJ-01", "PET", 5, true, "Today", 123);
+    expect(cleanPet.earnedNgn).toBe(900);
+    expect(cleanPet.co2SavedKg).toBe(10.5);
+
+    const dirtyDrop = recordCircularDrop("HUB-IKJ-01", "PET", 4, false, "Today", 124);
+    expect(dirtyDrop.earnedNgn).toBe(0);
+    expect(dirtyDrop.co2SavedKg).toBe(0);
+
+    const starter = defaultCircularDrops();
+    const summary = evaluateCircularSummary([...starter, cleanPet], 750);
+    expect(summary.totalKg).toBe(13.3);
+    expect(summary.feeOffsetPct).toBe(100);
+    expect(summary.eprCommercialRebateEligible).toBe(false);
+
+    const heavyCardboard = recordCircularDrop("HUB-KEK-02", "CARDBOARD", 15, true, "Today", 125);
+    const eprSummary = evaluateCircularSummary([...starter, cleanPet, heavyCardboard], 12500);
+    expect(eprSummary.totalKg).toBe(28.3);
+    expect(eprSummary.eprCommercialRebateEligible).toBe(true);
   });
 });
