@@ -1,4 +1,5 @@
 import * as React from "react";
+import { phonePortal } from "@/lib/portal-target";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
@@ -33,7 +34,7 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
+  <DrawerPortal container={phonePortal()}>
     <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}

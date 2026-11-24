@@ -13,6 +13,7 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { StoreProvider } from "../lib/store";
 import { MockupFrame } from "../components/MockupFrame";
+import { LanguageProvider } from "@/lib/language";
 // import { EvaluationAccessWall } from "../components/legal/EvaluationAccessWall";
 
 function NotFoundComponent() {
@@ -58,6 +59,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     ],
@@ -89,11 +93,11 @@ function RootComponent() {
       {/* Security layer commented out for now:
       <EvaluationAccessWall>
       */}
-        <StoreProvider>
+        <LanguageProvider><StoreProvider>
           <MockupFrame>
             <Outlet />
           </MockupFrame>
-        </StoreProvider>
+        </StoreProvider></LanguageProvider>
       {/*
       </EvaluationAccessWall>
       */}

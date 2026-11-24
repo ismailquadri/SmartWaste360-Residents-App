@@ -239,6 +239,26 @@ export function settleCompoundRoom(rooms: CompoundRoom[], duid: string): Compoun
   );
 }
 
+/** A batch is all-or-nothing and only charges rooms still pending. */
+export function settlePendingRooms(rooms: CompoundRoom[], balance: number) {
+  const pending = rooms.filter((room) => !room.paidThisMonth);
+  const debit = pending.reduce((sum, room) => sum + room.monthlyShareNgn, 0);
+  if (!pending.length || !Number.isFinite(balance) || balance < debit) return null;
+  if (pending.some((room) => !Number.isFinite(room.monthlyShareNgn) || room.monthlyShareNgn <= 0)) return null;
+  const duids = new Set(pending.map((room) => room.duid));
+  return {
+    balance: balance - debit,
+    debit,
+    settledDuids: [...duids],
+    rooms: rooms.map((room) => duids.has(room.duid)
+      ? { ...room, paidThisMonth: true, arrearsDays: 0, status: "Paid" as const }
+      : room),
+  };
+}
+
+export const LAWMA_USSD_SHORTCODE = "*384*529#";
+export const LAWMA_USSD_TEL = `tel:${encodeURIComponent(LAWMA_USSD_SHORTCODE)}`;
+
 /**
  * Lagos State Tenancy Law Sec. 44 safeguard:
  * Incoming tenant occupation resets any inherited arrears from prior occupant
@@ -579,4 +599,40 @@ export function evaluateCircularSummary(
     feeOffsetPct,
     eprCommercialRebateEligible: totalKg >= 25,
   };
+}
+
+// ---------------- Green Bag QR handoff verification ----------------
+
+export type BagHandoffStatus = "Verified" | "Rejected";
+export type BagHandoff = {
+  id: string;
+  scannedCode: string;
+  roomDuid: string;
+  roomLabel: string;
+  bags: number;
+  crew: string;
+  truckId: string;
+  status: BagHandoffStatus;
+  reason: string;
+  at: string;
+};
+
+/**
+ * Checks a crew scan of a Green Bag pass. Verified only when the scanned code is this room's
+ * pass and the room has paid this month; otherwise rejected with a plain-language reason.
+ */
+export function verifyBagHandoff(
+  scannedCode: string,
+  room: Pick<CompoundRoom, "duid" | "roomLabel" | "bagQrCode" | "paidThisMonth">,
+  bags: number,
+): { status: BagHandoffStatus; reason: string } {
+  const code = scannedCode.trim().toUpperCase();
+  if (!code) return { status: "Rejected", reason: "No code was scanned." };
+  if (code !== room.bagQrCode.toUpperCase())
+    return { status: "Rejected", reason: `The scanned code doesn't match ${room.roomLabel}'s pass.` };
+  if (!room.paidThisMonth)
+    return { status: "Rejected", reason: `${room.roomLabel} hasn't paid this month, so the crew can't take the bags yet.` };
+  if (!Number.isInteger(bags) || bags < 1 || bags > 10)
+    return { status: "Rejected", reason: "Bag count must be between 1 and 10." };
+  return { status: "Verified", reason: `${bags} bag${bags === 1 ? "" : "s"} collected from ${room.roomLabel}.` };
 }

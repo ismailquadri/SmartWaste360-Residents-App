@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/language";
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronRight, Search, X } from "lucide-react";
 import {
@@ -9,6 +10,8 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { phonePortal } from "@/lib/portal-target";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -26,22 +29,23 @@ export function IosSection({
   children: ReactNode;
   className?: string | undefined;
 }) {
+  const { t: tr, localize } = useLanguage();
   return (
     <section className={cn("space-y-1.5", className)}>
-      {header && <h2 className="eyebrow px-4">{header}</h2>}
-      <div className="ios-group ios-group-divide">{children}</div>
-      {footer && <p className="px-4 text-[13px] leading-[18px] text-muted-foreground">{footer}</p>}
+      {header && <h2 className="eyebrow px-4">{localize(header)}</h2>}
+      <div className="ios-group ios-group-divide">{localize(children)}</div>
+      {footer && <p className="px-4 text-[13px] leading-[18px] text-muted-foreground">{localize(footer)}</p>}
     </section>
   );
 }
 
 const iconTones = {
-  forest: "bg-[#17593a] text-white",
-  ember: "bg-[#c84e0d] text-white",
-  green: "bg-[#248a3d] text-white",
-  blue: "bg-[#007aff] text-white",
-  slate: "bg-[#636366] text-white",
-  red: "bg-[#d92d20] text-white",
+  forest: "text-muted-foreground",
+  ember: "text-muted-foreground",
+  green: "text-muted-foreground",
+  blue: "text-muted-foreground",
+  slate: "text-muted-foreground",
+  red: "text-destructive",
 } as const;
 
 export type IosIconTone = keyof typeof iconTones;
@@ -70,32 +74,22 @@ function IosRowContent({
   selected,
   trailing,
 }: IosRowBaseProps) {
+  const { t: tr, localize } = useLanguage();
   return (
     <>
-      {leading}
-      {!leading && icon && (
-        <span
-          aria-hidden="true"
-          className={cn(
-            "grid size-[30px] shrink-0 place-items-center rounded-[7px] shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.2)]",
-            iconTones[iconTone],
-          )}
-        >
-          {icon}
-        </span>
-      )}
+      {localize(leading)}
       <span className="min-w-0 flex-1 py-0.5 text-left">
-        <span className="block text-[16px] leading-[21px] font-medium tracking-[-0.015em] text-foreground">
-          {title}
+        <span className="block truncate text-[16px] leading-[21px] font-medium tracking-[-0.015em] text-foreground">
+          {localize(title)}
         </span>
         {subtitle && (
-          <span className="mt-0.5 block text-[13px] leading-[17px] text-muted-foreground">{subtitle}</span>
+          <span className="mt-0.5 block truncate text-[13px] leading-[17px] text-muted-foreground">{localize(subtitle)}</span>
         )}
       </span>
       {detail && (
         <span className="shrink-0 text-[15px] text-muted-foreground tabular-nums">{detail}</span>
       )}
-      {trailing}
+      {localize(trailing)}
       {selected && <Check className="size-5 shrink-0 text-primary" strokeWidth={2.4} aria-hidden="true" />}
       {disclosure && (
         <ChevronRight className="size-[18px] shrink-0 text-[#3c3c43]/35" strokeWidth={2.2} aria-hidden="true" />
@@ -159,9 +153,9 @@ export function IosButton({ tone = "primary", type = "button", className, ...pro
       type={type}
       {...props}
       className={cn(
-        "inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[13px] px-5 text-[16px] font-semibold tracking-[-0.015em] transition-all disabled:pointer-events-none disabled:opacity-40",
-        tone === "primary" && "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(23,89,58,0.18)]",
-        tone === "ember" && "bg-ember text-ember-foreground shadow-[0_2px_8px_rgba(200,78,13,0.2)]",
+        "inline-flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full px-6 text-[16px] font-bold tracking-[-0.015em] transition-all disabled:pointer-events-none disabled:opacity-40",
+        tone === "primary" && "bg-primary text-primary-foreground shadow-[0_10px_22px_-10px_rgba(31,30,43,0.6)]",
+        tone === "ember" && "bg-ember text-ember-foreground dock-fab",
         tone === "tinted" && "bg-primary/12 text-primary hover:bg-primary/16",
         tone === "gray" && "bg-[#767680]/[0.12] text-foreground hover:bg-[#767680]/[0.18]",
         tone === "light" && "bg-white text-primary shadow-sm",
@@ -184,14 +178,15 @@ export function IosField({
   id: providedId,
   ...rest
 }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string | undefined }) {
+  const { t: tr, localize } = useLanguage();
   const autoId = useId();
   const id = providedId ?? autoId;
   const hintId = hint ? `${id}-hint` : undefined;
 
   return (
-    <div className="block px-4 py-3">
+    <div className="block">
       <label htmlFor={id} className="block text-[13px] font-medium text-muted-foreground">
-        {label}
+        {localize(label)}
       </label>
       <input
         id={id}
@@ -204,7 +199,7 @@ export function IosField({
       />
       {hint && (
         <span id={hintId} className="mt-1 block text-[12px] text-muted-foreground">
-          {hint}
+          {localize(hint)}
         </span>
       )}
     </div>
@@ -222,20 +217,21 @@ export function IosSearchBar({
   placeholder?: string | undefined;
   label?: string | undefined;
 }) {
+  const { t: tr, localize } = useLanguage();
   const id = useId();
   return (
     <search>
       <label htmlFor={id} className="sr-only">
-        {label}
+        {localize(label)}
       </label>
-      <div className="flex min-h-[40px] items-center gap-2 rounded-[10px] bg-[#767680]/[0.12] px-3 focus-within:ring-2 focus-within:ring-primary/40">
+      <div className="flex min-h-[52px] items-center gap-2 rounded-full bg-card px-4 shadow-soft focus-within:ring-2 focus-within:ring-primary/40">
         <Search className="size-[17px] shrink-0 text-[#3c3c43]/60" aria-hidden="true" />
         <input
           id={id}
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={localize(placeholder)}
           autoCorrect="off"
           autoCapitalize="none"
           spellCheck={false}
@@ -245,7 +241,7 @@ export function IosSearchBar({
           <button
             type="button"
             onClick={() => onChange("")}
-            aria-label="Clear search"
+            aria-label={tr("Clear search")}
             className="grid size-6 shrink-0 place-items-center rounded-full bg-[#3c3c43]/35 text-white hover:bg-[#3c3c43]/50"
           >
             <X className="size-3.5" strokeWidth={2.5} />
@@ -273,20 +269,21 @@ export function IosSegmentedControl<T extends string | number>({
   onChange: (value: T) => void;
   className?: string | undefined;
 }) {
+  const { t: tr, localize } = useLanguage();
   const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, idx: number) => {
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
-      const next = options[(idx + 1) % options.length]!;
-      onChange(next.value);
+      const next = options[(idx + 1) % options.length];
+      if (next) onChange(next.value);
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
-      const prev = options[(idx - 1 + options.length) % options.length]!;
-      onChange(prev.value);
+      const prev = options[(idx - 1 + options.length) % options.length];
+      if (prev) onChange(prev.value);
     }
   };
 
   return (
-    <div role="radiogroup" aria-label={label} className={cn("ios-segmented", className)}>
+    <div role="radiogroup" aria-label={localize(label)} className={cn("ios-segmented", className)}>
       {options.map((opt, idx) => {
         const active = opt.value === value;
         return (
@@ -300,7 +297,7 @@ export function IosSegmentedControl<T extends string | number>({
             onKeyDown={(e) => handleKeyDown(e, idx)}
             className="ios-segmented-item"
           >
-            {opt.label}
+            {localize(opt.label)}
           </button>
         );
       })}
@@ -325,11 +322,12 @@ export function IosStepper({
   onChange: (next: number) => void;
   label?: string | undefined;
 }) {
+  const { t: tr, localize } = useLanguage();
   return (
-    <div className="ios-stepper" role="group" aria-label={label}>
+    <div className="ios-stepper" role="group" aria-label={localize(label)}>
       <button
         type="button"
-        aria-label={`Decrease ${label.toLowerCase()}`}
+        aria-label={tr("Decrease {0}", label.toLowerCase())}
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
         className="ios-stepper-btn"
@@ -339,7 +337,7 @@ export function IosStepper({
       <span aria-hidden="true" className="ios-stepper-divider" />
       <button
         type="button"
-        aria-label={`Increase ${label.toLowerCase()}`}
+        aria-label={tr("Increase {0}", label.toLowerCase())}
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
         className="ios-stepper-btn"
@@ -375,14 +373,15 @@ const badgeTones: Record<string, string> = {
 };
 
 export function IosBadge({ children }: { children: string }) {
+  const { t: tr, localize } = useLanguage();
   return (
     <span
       className={cn(
         "inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold tracking-[-0.01em]",
-        badgeTones[children] ?? "bg-[#c84e0d]/12 text-[#a83e06]",
+        badgeTones[children] ?? "bg-ember/12 text-[#a83e06]",
       )}
     >
-      {children}
+      {localize(children)}
     </span>
   );
 }
@@ -396,6 +395,7 @@ export function IosEmpty({
   title?: string | undefined;
   children: ReactNode;
 }) {
+  const { t: tr, localize } = useLanguage();
   return (
     <div className="ios-card flex flex-col items-center justify-center px-6 py-8 text-center">
       {icon && (
@@ -403,11 +403,11 @@ export function IosEmpty({
           aria-hidden="true"
           className="mb-3 grid size-11 place-items-center rounded-full bg-[#767680]/[0.1] text-muted-foreground"
         >
-          {icon}
+          {localize(icon)}
         </div>
       )}
-      {title && <p className="text-[16px] font-semibold text-foreground">{title}</p>}
-      <p className={cn("text-[14px] text-muted-foreground", title && "mt-1")}>{children}</p>
+      {title && <p className="text-[16px] font-semibold text-foreground">{localize(title)}</p>}
+      <p className={cn("text-[14px] text-muted-foreground", title && "mt-1")}>{localize(children)}</p>
     </div>
   );
 }
@@ -421,69 +421,66 @@ export function IosSheet({
   onClose,
   title,
   children,
+  notice,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  notice?: ReactNode;
 }) {
+  const { t: tr, localize } = useLanguage();
   const titleId = useId();
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const prevFocus = document.activeElement as HTMLElement | null;
-    sheetRef.current?.focus();
-
-    const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      prevFocus?.focus?.();
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  const previousFocus = useRef<HTMLElement | null>(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <DialogPrimitive.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+    <DialogPrimitive.Portal container={phonePortal()}>
+    <div className="fixed inset-0 z-[70] flex items-end justify-center">
+      <DialogPrimitive.Overlay asChild>
       <div
         aria-hidden="true"
         onClick={onClose}
         className="absolute inset-0 bg-black/35 backdrop-blur-[2px] animate-in fade-in duration-200"
       />
+      </DialogPrimitive.Overlay>
+      <DialogPrimitive.Content asChild aria-describedby={undefined} onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        sheetRef.current?.focus();
+      }} onCloseAutoFocus={(event) => { event.preventDefault(); previousFocus.current?.focus(); }}>
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex max-h-[86%] w-full max-w-[430px] flex-col rounded-t-[28px] bg-[#f2f2f7] px-5 pb-6 pt-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.18)] outline-none animate-in slide-in-from-bottom duration-300"
+        className="relative flex max-h-[86%] w-full max-w-[430px] flex-col rounded-t-[36px] bg-card px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.18)] outline-none animate-in slide-in-from-bottom duration-300"
       >
-        <div aria-hidden="true" className="mx-auto mb-3 h-[5px] w-9 shrink-0 rounded-full bg-[#3c3c43]/25" />
+        <div aria-hidden="true" className="mx-auto mb-4 mt-1 h-1.5 w-12 shrink-0 rounded-full bg-foreground/20" />
         <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
-          <h2 id={titleId} className="text-[20px] font-bold tracking-[-0.02em] text-foreground">
-            {title}
-          </h2>
+          <DialogPrimitive.Title asChild><h2 id={titleId} className="text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
+            {localize(title)}
+          </h2></DialogPrimitive.Title>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close sheet"
-            className="grid size-[30px] shrink-0 place-items-center rounded-full bg-[#767680]/[0.16] text-muted-foreground hover:bg-[#767680]/25"
+            aria-label={tr("Close sheet")}
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80"
           >
             <X className="size-4" strokeWidth={2.5} />
           </button>
         </div>
+        {notice && <div className="mb-3 shrink-0">{localize(notice)}</div>}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
-          {children}
+          {localize(children)}
         </div>
       </div>
+      </DialogPrimitive.Content>
     </div>
+    </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -499,6 +496,7 @@ export function IosActionSheet({
   confirmLabel,
   onConfirm,
   destructive = false,
+  cancelLabel = "Cancel",
 }: {
   open: boolean;
   onClose: () => void;
@@ -507,53 +505,45 @@ export function IosActionSheet({
   confirmLabel: string;
   onConfirm: () => void;
   destructive?: boolean | undefined;
+  cancelLabel?: string;
 }) {
+  const { t: tr, localize } = useLanguage();
   const titleId = useId();
+  const messageId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const prevFocus = document.activeElement as HTMLElement | null;
-    cancelRef.current?.focus();
-
-    const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      prevFocus?.focus?.();
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  const previousFocus = useRef<HTMLElement | null>(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-3 pb-7">
+    <DialogPrimitive.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+    <DialogPrimitive.Portal container={phonePortal()}>
+    <div className="fixed inset-0 z-[70] flex items-end justify-center p-3 pb-7">
+      <DialogPrimitive.Overlay asChild>
       <div
         aria-hidden="true"
         onClick={onClose}
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
       />
+      </DialogPrimitive.Overlay>
+      <DialogPrimitive.Content asChild role="alertdialog" onOpenAutoFocus={(event) => {
+        event.preventDefault(); previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; cancelRef.current?.focus();
+      }} onCloseAutoFocus={(event) => { event.preventDefault(); previousFocus.current?.focus(); }}>
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={title ? titleId : messageId}
+        aria-describedby={messageId}
         className="relative w-full max-w-[400px] space-y-2 animate-in slide-in-from-bottom duration-250"
       >
         <div className="overflow-hidden rounded-[14px] bg-[#f9f9f9]/95 backdrop-blur-xl">
           <div className="px-4 py-3.5 text-center">
             {title && (
-              <p id={titleId} className="text-[13px] font-semibold text-[#3c3c43]/80">
-                {title}
-              </p>
+              <DialogPrimitive.Title asChild><p id={titleId} className="text-[13px] font-semibold text-[#3c3c43]/80">
+                {localize(title)}
+              </p></DialogPrimitive.Title>
             )}
-            <p id={!title ? titleId : undefined} className="mt-0.5 text-[13px] leading-[18px] text-[#3c3c43]/65">
-              {message}
-            </p>
+            <DialogPrimitive.Description asChild><p id={messageId} className="mt-0.5 text-[13px] leading-[18px] text-[#3c3c43]/65">
+              {localize(message)}
+            </p></DialogPrimitive.Description>
           </div>
           <div className="border-t border-[#3c3c43]/[0.16]">
             <button
@@ -567,7 +557,7 @@ export function IosActionSheet({
                 destructive ? "text-[#d92d20]" : "text-primary font-medium",
               )}
             >
-              {confirmLabel}
+              {localize(confirmLabel)}
             </button>
           </div>
         </div>
@@ -578,9 +568,12 @@ export function IosActionSheet({
           onClick={onClose}
           className="flex min-h-[56px] w-full items-center justify-center rounded-[14px] bg-white text-[19px] font-semibold text-primary shadow-sm transition-colors active:bg-[#e5e5ea]"
         >
-          Cancel
+          {localize(cancelLabel)}
         </button>
       </div>
+      </DialogPrimitive.Content>
     </div>
+    </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

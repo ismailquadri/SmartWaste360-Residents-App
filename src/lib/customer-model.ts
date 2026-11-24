@@ -6,6 +6,7 @@ import {
   type CorridorSweep,
   type KioskVoucher,
   type RecyclableDrop,
+  type BagHandoff,
   type RemediationCase,
   type WhistleblowerTicket,
 } from "./resident-ops";
@@ -43,6 +44,7 @@ export type Model = {
   kioskVouchers?: KioskVoucher[] | undefined;
   whistleblowerTickets?: WhistleblowerTicket[] | undefined;
   recyclableDrops?: RecyclableDrop[] | undefined;
+  bagHandoffs?: BagHandoff[] | undefined;
 };
 
 export const premises: Premise[] = [
