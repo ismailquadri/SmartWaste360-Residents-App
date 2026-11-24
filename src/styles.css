@@ -7,8 +7,14 @@
 /* SmartWaste360 Customer App — Apple iOS Human Interface Guidelines Design System */
 
 @theme inline {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --color-sun: var(--sun);
+  --color-sun-foreground: var(--sun-foreground);
+  --color-sun-deep: var(--sun-deep);
+  --color-ink: var(--ink);
+  --shadow-soft: 0 6px 20px -8px rgba(31, 30, 43, 0.12);
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
@@ -46,43 +52,48 @@
 :root {
   --radius: 12px;
   /* iOS systemGroupedBackground (#F2F2F7) & label hierarchy */
-  --background: #f2f2f7;
-  --foreground: #000000;
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.26 0 0);
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: oklch(0.26 0 0);
   --popover: #ffffff;
   --popover-foreground: #000000;
 
   /* SmartWaste360 Forest Emerald Tint (WCAG AA compliant on white/grouped surfaces) */
-  --primary: #17593a;
+  --primary: oklch(0.22 0 0);
   --primary-foreground: #ffffff;
-  --secondary: #e5f0ea;
-  --secondary-foreground: #12472e;
-  --muted: #e5e5ea;
-  --muted-foreground: #5c5c62;
-  --accent: #e5f0ea;
-  --accent-foreground: #12472e;
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: #1f1e2b;
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --accent: oklch(0.7 0.19 50 / 0.1);
+  --accent-foreground: oklch(0.52 0.14 50);
 
   /* iOS System Semantic Colors */
-  --destructive: #d92d20;
+  --destructive: oklch(0.58 0.21 30);
   --destructive-foreground: #ffffff;
-  --border: rgba(60, 60, 67, 0.16);
-  --input: rgba(60, 60, 67, 0.16);
-  --ring: #17593a;
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.7 0.19 50);
 
   /* Brand & Status Accents */
-  --ember: #c84e0d;
+  --ember: oklch(0.7 0.19 50);
   --ember-foreground: #ffffff;
-  --pale: #e8f3ec;
+  --pale: #e7f6ec;
   --sage: #edf2ee;
-  --success: #1b7f37;
-  --warning: #b25000;
+  --success: oklch(0.55 0.13 150);
+  --warning: #f0a020;
 
   /* Apple HIG System Materials & Controls */
   --ios-fill-tertiary: rgba(118, 118, 128, 0.12);
   --ios-fill-secondary: rgba(120, 120, 128, 0.16);
   --ios-separator: rgba(60, 60, 67, 0.14);
   --ios-chrome: rgba(249, 249, 249, 0.88);
+  --sun: #ffc24b;
+  --sun-foreground: oklch(0.22 0 0);
+  --sun-deep: #f5a516;
+  --ink: oklch(0.18 0 0);
+  --quest: oklch(0.18 0 0);
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
 }
@@ -109,7 +120,7 @@
   font-size: 13px;
   line-height: 18px;
   letter-spacing: 0.015em;
-  font-weight: 400;
+  font-weight: 800;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
 }
@@ -123,7 +134,7 @@
 }
 
 @utility pass {
-  background-image: linear-gradient(145deg, #1b6543 0%, #144a31 55%, #0e3523 100%);
+  background-image: linear-gradient(145deg, #2f2e44 0%, #1f1e2b 100%);
 }
 
 /* iOS Tactile Press & Control Transitions */
@@ -167,38 +178,15 @@ select {
   }
 }
 
-.ios-stagger > * {
-  animation: ios-rise 0.42s var(--ease-ios) both;
-}
-.ios-stagger > *:nth-child(2) { animation-delay: 25ms; }
-.ios-stagger > *:nth-child(3) { animation-delay: 50ms; }
-.ios-stagger > *:nth-child(4) { animation-delay: 75ms; }
-.ios-stagger > *:nth-child(5) { animation-delay: 100ms; }
-.ios-stagger > *:nth-child(n + 6) { animation-delay: 125ms; }
-
-@keyframes ios-in {
-  from {
-    opacity: 0;
-    transform: translateX(22px);
-  }
-}
-@keyframes ios-out {
-  to {
-    opacity: 0;
-    transform: translateX(-14px);
-  }
-}
-
-::view-transition-old(page) {
-  animation: ios-out 0.28s var(--ease-ios) both;
-}
-::view-transition-new(page) {
-  animation: ios-in 0.36s var(--ease-ios) both;
-}
+/* Screen change: one calm motion only. Old screen fades out fast, new one fades in with a small lift. Bars stay still. */
+.ios-stagger > * { animation: none; }
+@keyframes page-out { to { opacity: 0; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+::view-transition-group(page) { animation-duration: 0s; }
+::view-transition-old(page) { animation: page-out 120ms ease-out both; }
+::view-transition-new(page) { animation: page-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) 60ms both; }
 ::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.25s;
-}
+::view-transition-new(root) { animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -219,15 +207,16 @@ select {
 
 .app-phone main {
   padding-block-start: max(18px, env(safe-area-inset-top));
-  padding-block-end: calc(140px + env(safe-area-inset-bottom));
 }
+.app-topbar { top: 0; padding-top: max(8px, env(safe-area-inset-top)); margin-top: calc(-1 * max(18px, env(safe-area-inset-top))); }
+@media (min-width: 480px) { .mockup-screen-shell .app-topbar { top: 48px; margin-top: -8px; padding-top: 8px; } }
 
 .app-phone h1 {
   font-family: var(--font-display);
   font-size: 34px;
   line-height: 1.15;
   letter-spacing: -0.025em;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .app-phone h2 {
@@ -249,9 +238,10 @@ select {
 /* iOS Inset Grouped Section & Cells */
 .ios-group {
   background-color: var(--color-card);
-  border-radius: 12px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 5%, transparent);
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-soft);
 }
 
 .ios-group-divide > * + * {
@@ -271,9 +261,9 @@ select {
 
 .ios-card {
   background-color: var(--color-card);
-  border-radius: 14px;
-  border: 0.5px solid rgba(60, 60, 67, 0.1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  border-radius: 24px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 5%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 
 /* iOS Translucent Tab Bar */
@@ -290,8 +280,8 @@ select {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  padding: 2.5px;
-  border-radius: 9px;
+  padding: 6px;
+  border-radius: 999px;
   background-color: var(--ios-fill-tertiary);
 }
 
@@ -299,29 +289,27 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 30px;
+  min-block-size: 40px;
   padding-inline: 10px;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #3c3c43;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-foreground);
 }
 
 .ios-segmented-item[aria-checked="true"],
 .ios-segmented-item[data-active="true"] {
   background-color: #ffffff;
   color: #000000;
-  font-weight: 600;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 1px rgba(0, 0, 0, 0.05);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(31, 30, 43, 0.08);
 }
 
 /* iOS UIStepper */
 .ios-stepper {
   display: inline-flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: 999px;
   background-color: var(--ios-fill-tertiary);
   overflow: hidden;
 }
@@ -353,11 +341,11 @@ select {
 
 /* Apple Card / Pass Surface */
 .wallet-balance {
-  border-radius: 18px;
-  background-image: linear-gradient(145deg, #1b6543 0%, #13462f 58%, #0d3221 100%);
+  border-radius: 28px;
+  background-image: radial-gradient(120% 140% at 100% 0%, rgba(255,107,129,0.45) 0%, transparent 55%), linear-gradient(145deg, #2f2e44 0%, #1f1e2b 100%);
   padding: 22px;
   color: #ffffff;
-  box-shadow: 0 12px 28px rgba(19, 60, 37, 0.18);
+  box-shadow: 0 18px 36px -14px rgba(31, 30, 43, 0.45);
 }
 
 .wallet-summary {
@@ -463,7 +451,11 @@ select {
 
   .mockup-scroll .app-phone main {
     padding-block-start: 56px;
-    padding-block-end: 152px;
+    padding-block-end: 16px;
+  }
+
+  .mockup-scroll .app-phone:has(.app-dock) main {
+    padding-block-end: calc(8rem + env(safe-area-inset-bottom));
   }
 
   .mockup-scroll .app-tabbar {
@@ -479,3 +471,213 @@ dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
 }
+
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+.quest-card {
+  background: radial-gradient(120% 160% at 100% 0%, rgba(255, 107, 74, 0.35) 0%, transparent 55%), var(--quest);
+}
+
+/* Floating dark tab bar with a curved notch for the centre action */
+.dock {
+  position: relative;
+  border-radius: 34px;
+  background: var(--ink);
+  box-shadow: 0 18px 40px -12px rgba(31, 30, 43, 0.55);
+}
+.dock::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -18px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  inline-size: 150px;
+  block-size: 30px;
+  background: var(--ink);
+  clip-path: path("M0 30 C 40 30, 45 0, 75 0 C 105 0, 110 30, 150 30 Z");
+}
+.dock-fab {
+  box-shadow: 0 10px 24px -6px color-mix(in oklab, var(--ember) 70%, transparent);
+}
+.dock-fab[aria-expanded="true"] {
+  box-shadow: 0 0 0 10px color-mix(in oklab, var(--ember) 28%, transparent);
+}
+
+@keyframes dock-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.85); }
+}
+.dock-menu > * { animation: dock-pop 0.35s var(--ease-spring) both; }
+.dock-menu > *:nth-child(2) { animation-delay: 40ms; }
+.dock-menu > *:nth-child(3) { animation-delay: 80ms; }
+.dock-menu > *:nth-child(4) { animation-delay: 120ms; }
+
+/* Badge celebration */
+.badge-stage { background: var(--sun); }
+.badge-rays {
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.28) 0deg 12deg, transparent 12deg 36deg);
+  mask-image: radial-gradient(circle, #000 15%, transparent 70%);
+  animation: spin 24s linear infinite;
+}
+.badge-shield {
+  border-radius: 40px 40px 50% 50% / 40px 40px 60% 60%;
+  background: linear-gradient(145deg, #fff3c4 0%, #ffe48a 50%, #ffd23f 100%);
+  box-shadow: 0 0 0 12px #ffcf2e, 0 14px 0 12px #e8a514, 0 30px 50px rgba(0, 0, 0, 0.15);
+}
+@keyframes spin { to { rotate: 360deg; } }
+
+/* Elevated action reminder cards */
+.reminder-card {
+  background-color: var(--color-card);
+  border-radius: 24px;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 5%, transparent);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-foreground) 6%, transparent),
+    0 18px 40px -18px color-mix(in oklab, var(--color-foreground) 28%, transparent);
+}
+
+/* Live truck proximity card */
+.live-truck {
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in oklab, var(--ember) 45%, transparent) 0%, transparent 55%), var(--quest);
+  box-shadow: 0 20px 40px -18px color-mix(in oklab, var(--ink) 70%, transparent);
+}
+
+/* Focus ring for soft pill inputs */
+.app-phone div:has(> input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="search"], [type="range"])):focus-within,
+.app-phone div:has(> textarea):focus-within,
+.app-phone div:has(> select):focus-within {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--ember) 18%, transparent);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* LAWMA brand pass: flat surfaces, hairline borders, no decorative shadows/gradients */
+.app-phone *, .app-phone *::before, .app-phone *::after,
+[role="dialog"], [role="dialog"] * { box-shadow: none !important; }
+.ios-card, .ios-group, .reminder-card { border-radius: 16px; border: 1px solid var(--color-border); }
+.live-truck { background: var(--ink); }
+.quest-card { background: var(--ink); }
+.app-phone h1, .app-phone h2, .app-phone h3 { font-family: var(--font-display); letter-spacing: -0.015em; }
+/* Buttons and tabs stay on a single line */
+.app-phone button, .app-phone a[class*="rounded-full"], .ios-segmented-item, [role="tab"] {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-phone :focus-visible { outline-color: var(--ember); }
+
+/* Open Scouts design system (firecrawl/open-scouts): neutral greys, hairline borders,
+   heat-orange single accent, 8–12px radii, mono labels, compact type scale. */
+:root {
+  --background: #f9f9f9;
+  --foreground: #262626;
+  --card-foreground: #262626;
+  --primary: #262626;
+  --muted: #f3f3f3;
+  --secondary: #f3f3f3;
+  --muted-foreground: rgba(38, 38, 38, 0.6);
+  --border: #e8e8e8;
+  --input: #ededed;
+  --ember: #fa5d19;
+  --ring: #fa5d19;
+  --accent: rgba(250, 93, 25, 0.08);
+  --accent-foreground: #b45200;
+  --ink: #141414;
+  --quest: #141414;
+}
+.ios-card, .ios-group, .reminder-card { border-radius: 12px; border-color: var(--color-border); }
+.app-phone button.rounded-full, .app-phone a.rounded-full,
+.app-phone button[class*="rounded-["], .app-phone a[class*="rounded-["] { border-radius: 10px; }
+.ios-segmented { border-radius: 10px; padding: 4px; background: var(--color-muted); }
+.ios-segmented-item { border-radius: 8px; font-weight: 500; }
+.ios-segmented-item[aria-checked="true"], .ios-segmented-item[data-active="true"] {
+  font-weight: 600; outline: 1px solid var(--color-border);
+}
+.app-phone h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.app-phone h2 { font-weight: 600; letter-spacing: -0.02em; }
+.app-phone .font-extrabold { font-weight: 600; }
+.app-phone .font-bold { font-weight: 600; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--color-muted-foreground);
+}
+/* Signature inset-sheen on the heat-orange primary action (the one allowed depth cue) */
+.app-phone button.bg-ember, .app-phone a.bg-ember {
+  box-shadow: 0 -6px 12px 0 rgba(255, 0, 0, 0.2) inset, 0 1px 1px 0 rgba(255, 77, 0, 0.12) !important;
+}
+.app-phone button.bg-ember:hover, .app-phone a.bg-ember:hover { background-color: #ff6a2b; }
+.app-phone button:active, .app-phone a:active { scale: 0.98; }
+.wallet-balance { background: var(--ink) !important; background-image: none !important; border-radius: 12px !important; }
+.pass { background-image: none; background-color: var(--ink); }
+
+/* Fluxio icon states: active, pressed, disabled */
+.fluxio-icon { transition: transform 120ms ease, opacity 120ms ease, color 120ms ease; }
+a:hover > .fluxio-icon, button:not(:disabled):hover .fluxio-icon { opacity: 0.85; }
+a:active .fluxio-icon, button:not(:disabled):active .fluxio-icon, [role="button"]:active .fluxio-icon { transform: scale(0.88); }
+[aria-current="page"] .fluxio-icon, [data-state="active"] .fluxio-icon, [aria-selected="true"] .fluxio-icon, [aria-pressed="true"] .fluxio-icon { color: var(--color-ember, #fa5d19); }
+[aria-current="page"] .bg-ember .fluxio-icon, [data-state="active"] .bg-ember .fluxio-icon { color: var(--color-ember-foreground, #ffffff); }
+button:disabled .fluxio-icon, [aria-disabled="true"] .fluxio-icon, [data-disabled] .fluxio-icon { opacity: 0.35; transform: none; }
+@media (prefers-reduced-motion: reduce) { .fluxio-icon { transition: none; } a:active .fluxio-icon, button:active .fluxio-icon { transform: none; } }
+
+/* Inside the phone mockup, overlays/fixed layers are bound to the screen, not the browser window */
+@media (min-width: 480px) {
+  .mockup-screen-shell [data-radix-portal], .mockup-screen-shell > [role="dialog"],
+  .mockup-screen-shell > .fixed { position: absolute !important; }
+  .mockup-scroll .app-phone { max-inline-size: 100%; overflow-x: clip; }
+}
+
+/* Card corners reduced 25% */
+.ios-card, .ios-group, .reminder-card, .wallet-balance { border-radius: 9px !important; }
+.app-phone .rounded-xl { border-radius: 9px; }
+.app-phone .rounded-2xl { border-radius: 12px; }
+.app-phone .rounded-3xl { border-radius: 14px; }
+.app-phone [class*="rounded-[2"], .app-phone [class*="rounded-[3"] { border-radius: 14px; }
+@media (min-width: 480px) { .mockup-screen-shell .app-dock { padding-bottom: 18px; } }
+
+/* Hide the bottom dock while any sheet, drawer, dialog or alert is open */
+.app-dock { transition: transform 0.2s ease, opacity 0.2s ease; }
+.mockup-screen-shell:has([role="dialog"]:not([data-state="closed"])) .app-dock,
+.mockup-screen-shell:has([role="alertdialog"]:not([data-state="closed"])) .app-dock {
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Form fields (Open Scouts): one flat box, one focus state — no pill, no nested outline */
+.app-phone div:not(.no-field-box):has(> input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="search"], [type="range"])),
+.app-phone div:not(.no-field-box):has(> textarea),
+.app-phone div:not(.no-field-box):has(> select) {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.app-phone div:has(> input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="search"], [type="range"])):focus-within,
+.app-phone div:has(> textarea):focus-within,
+.app-phone div:has(> select):focus-within {
+  border-color: var(--ember);
+  background-color: var(--color-card);
+}
+.app-phone input:focus-visible, .app-phone textarea:focus-visible, .app-phone select:focus-visible { outline: none; }
+/* Grouped fields: drop the outer card so fields aren't boxed twice */
+.app-phone .ios-group:has(> div > input), .app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) {
+  background: transparent; border: 0; display: grid; gap: 10px;
+}
+.app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) > hr,
+.app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) [role="separator"] { display: none; }
+.app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) > * + * { border-top: 1px solid var(--color-border) !important; }
+.app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) > *::before,
+.app-phone .ios-group:has(input:not([type="checkbox"], [type="radio"])) > *::after { display: none; }
+
+/* Bottom bar is global: keep it out of screen-change animations so it never flickers */
+::view-transition-group(dock), ::view-transition-old(dock), ::view-transition-new(dock) { animation: none; }
+
+/* Longer native-language actions retain one line without spilling into neighbours. */
+html:not([lang="en"]) .app-phone button:not([role="tab"]):not(.ios-stepper-btn) {
+  font-size: 13px;
+  padding-inline: 10px;
+}
+html:not([lang="en"]) .app-phone .ios-segmented-item { font-size: 12px; padding-inline: 4px; }
+html:not([lang="en"]) .app-dock span { font-size: 10px; }

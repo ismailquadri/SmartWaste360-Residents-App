@@ -1,6 +1,17 @@
-# Roadmap
-
-- [x] Improve onboarding flow with the SmartWaste360 logo icon
-- [x] AI issue reporter: resident describes issue → model categorises + drafts report for partner/LAWMA
-- [x] Resident sign-in + server-side account storage (access across devices)
-- [ ] Partner Hub / LAWMA connection — waiting on app keys from the user and changes in those projects
+# Tasks
+- [x] Hide bottom dock when sheet/drawer/modal is open (verified desktop + mobile)
+- [x] Wallet amount input: typable, numeric keyboard, no overlap; fixed sheet focus-steal bug
+- [x] Amount field restyle: no borders, bolder digits, dimmer Naira sign
+- [x] Side drawer redesign: profile header + room status, truck chip, nav rows, emergency contacts
+- [x] Restyle Confirm Cleared / Dispute buttons on Pickups
+- [x] Redesign clearance-check card on Pickups
+- [x] Caretaker compound settlement with safe wallet debit (local demo caretaker view)
+- [x] One-tap USSD and visible demo badges across payment sheets
+- [x] Undo deleted report media and confirm profile demo reset
+- [x] Plain-language shared-drum and Sec. 44 guidance
+- [x] Accessible recording/ETA updates and offline drafting indicator (text saved locally; media stays in memory)
+- [x] Apply the latest choice: flat LAWMA voice panel, no fade
+- [x] Regression tests and audit flows verified inside phone/tablet/desktop frames (simulated camera/mic)
+- [x] Audit all resident journeys against 12 UX heuristics and document verified findings
+- [x] Add persistent English/Pidgin/Yorùbá/Igbo/Hausa selector and localize resident screens
+- [x] Verify language switching, retention, accessibility, and frame boundaries

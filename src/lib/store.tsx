@@ -15,10 +15,13 @@ import {
   resolveCitizenRemediation,
   resolveStatutoryPartner,
   settleCompoundRoom,
+  settlePendingRooms,
   type KioskProvider,
   type KioskVoucher,
   type MaterialType,
   type RecyclableDrop,
+  type BagHandoff,
+  verifyBagHandoff,
   type WhistleblowerTicket,
 } from "./resident-ops";
 
@@ -47,12 +50,14 @@ type Store = {
   cancelPickup: (id: string) => void;
   report: (type: string, detail: string, to: AppName[], extra?: { title?: string; urgency?: string; original?: string }) => string;
   settleRoom: (duid: string) => void;
+  settleCompound: () => void;
   applySec44Shield: (duid: string, incomingName: string) => void;
   createPosVoucher: (provider: KioskProvider, roomDuid: string, amountNgn: number) => KioskVoucher;
   resolveRemediation: (id: string, action: "confirm" | "dispute", note?: string, counterPhoto?: boolean) => string | null;
   setStormForecast: (mm36h: number) => void;
   submitWhistleblower: (category: string, corridor: string) => WhistleblowerTicket;
   logCircularDrop: (hubId: string, materialId: MaterialType, weightKg: number, cleanSort: boolean) => RecyclableDrop;
+  recordBagHandoff: (scannedCode: string, bags: number) => BagHandoff | null;
   loadPresetDemo: (preset: "tenement" | "commercial" | "residential") => void;
   reset: () => void;
 };
@@ -196,7 +201,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setModel((s) => {
           const compound = s.compound ?? createDefaultCompound();
           const room = compound.rooms.find((r) => r.duid === duid);
-          if (!room || room.paidThisMonth) return s;
+          if (!room || room.paidThisMonth || s.balance < room.monthlyShareNgn) return s;
           const nextRooms = settleCompoundRoom(compound.rooms, duid);
           const debit = Math.min(s.balance, room.monthlyShareNgn);
           return {
@@ -208,6 +213,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               ...s.entries,
             ],
             notices: notice(s, `${room.roomLabel} (${duid}) settled. Compound quorum recalculated.`),
+          };
+        });
+      },
+      settleCompound() {
+        setModel((s) => {
+          const compound = s.compound ?? createDefaultCompound();
+          const result = settlePendingRooms(compound.rooms, s.balance);
+          if (!result) return s;
+          return {
+            ...s,
+            balance: result.balance,
+            compound: { ...compound, rooms: result.rooms },
+            entries: [{ id: newId("TX"), title: `Compound settled (${result.settledDuids.length} rooms)`, amount: result.debit, time: stamp(), kind: "paid" }, ...s.entries],
+            notices: notice(s, `${result.settledDuids.length} pending rooms settled together. Shared drum open.`),
           };
         });
       },
@@ -303,6 +322,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
         return drop;
       },
+      recordBagHandoff(scannedCode, bags) {
+        const m = latest.current;
+        const compound = m.compound;
+        const room = compound?.rooms.find((r) => r.duid === compound.myRoomDuid);
+        if (!room) return null;
+        const res = verifyBagHandoff(scannedCode, room, bags);
+        const h: BagHandoff = {
+          id: newId("HANDOFF"), scannedCode: scannedCode.trim().toUpperCase(), roomDuid: room.duid, roomLabel: room.roomLabel, bags,
+          crew: m.corridorSweep?.crewName ?? "Collection crew", truckId: m.corridorSweep?.truckId ?? "Truck",
+          status: res.status, reason: res.reason, at: stamp(),
+        };
+        setModel((s) => ({ ...s, bagHandoffs: [h, ...(s.bagHandoffs ?? [])].slice(0, 30),
+          notices: notice(s, res.status === "Verified" ? `Bag collection verified: ${res.reason}` : `Bag scan not accepted: ${res.reason}`) }));
+        return h;
+      },
       loadPresetDemo(preset) {
         const map = {
           tenement: {
@@ -358,6 +392,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           localStorage.removeItem(INTRO_KEY);
           localStorage.removeItem(MODEL_KEY);
+          ["lawma-report-draft-v1", "lawma-address-correction", "lawma-case-opened", "lawma-claimed-milestones-v1"].forEach((key) => localStorage.removeItem(key));
         } catch { /* ignore */ }
       },
     };

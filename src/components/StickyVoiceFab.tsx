@@ -1,4 +1,6 @@
-import { Check, Landmark, Mic } from "lucide-react";
+import { useLanguage } from "@/lib/language";
+import { Landmark } from "lucide-react";
+import { FluxioCheck as Check, FluxioMic as Mic } from "@/components/icons/FluxioIcons";
 import { useState } from "react";
 import { PartnerLogo } from "@/components/PartnerLogo";
 import { LocalVoiceAgent } from "@/components/LocalVoiceAgent";
@@ -13,6 +15,7 @@ import type { ReportDraft } from "@/lib/report-ai";
 import { useStore } from "@/lib/store";
 
 export function StickyVoiceFab() {
+  const { t: tr, localize } = useLanguage();
   const { premise, partner, report } = useStore();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
@@ -41,9 +44,9 @@ export function StickyVoiceFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open local dialect voice reporting assistant"
-        title="Report dumping by voice"
-        className="group fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-4 z-30 flex size-[54px] items-center justify-center rounded-full bg-gradient-to-br from-[#17593a] via-[#1c7049] to-[#c84e0d] text-white ring-2 ring-white/90 shadow-[0_10px_24px_-4px_rgba(23,89,58,0.45),0_4px_12px_-2px_rgba(200,78,13,0.3)] transition-all hover:scale-105 active:scale-95 min-[480px]:bottom-[88px]"
+        aria-label={tr("Open local dialect voice reporting assistant")}
+        title={tr("Report dumping by voice")}
+        className="group fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-4 z-30 flex size-[54px] items-center justify-center rounded-full bg-gradient-to-br from-ember to-[#ff8fa0] text-white ring-2 ring-white/90 shadow-[0_10px_24px_-4px_rgba(23,89,58,0.45),0_4px_12px_-2px_rgba(200,78,13,0.3)] transition-all hover:scale-105 active:scale-95 min-[480px]:bottom-[88px]"
       >
         <Mic className="size-6 transition-transform group-hover:scale-105" strokeWidth={2.2} aria-hidden="true" />
         <span
@@ -57,7 +60,7 @@ export function StickyVoiceFab() {
       <IosSheet
         open={open}
         onClose={handleClose}
-        title={sent ? "Report submitted" : draft ? "Review voice report" : "Local Voice Agent"}
+        title={localize(sent ? "Report submitted" : draft ? "Review voice report" : "Local Voice Agent")}
       >
         {sent ? (
           <div className="space-y-5 py-4 text-center">
@@ -65,22 +68,18 @@ export function StickyVoiceFab() {
               <Check className="size-8" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="text-[20px] font-bold tracking-[-0.02em] text-foreground">Sent to dispatch</p>
-              <p className="mt-1 text-[14px] text-muted-foreground">
-                Case <span className="font-semibold text-foreground">{sent}</span> is saved in your You tab.
-              </p>
+              <p className="text-[20px] font-bold tracking-[-0.02em] text-foreground">{tr("Sent to dispatch")}</p>
+              <p className="mt-1 text-[14px] text-muted-foreground">{tr("Case")}{" "}<span className="font-semibold text-foreground">{sent}</span>{" "}{tr("is saved in your You tab.")}</p>
             </div>
-            <IosButton tone="primary" onClick={handleClose}>
-              Done
-            </IosButton>
+            <IosButton tone="primary" onClick={handleClose}>{tr("Done")}</IosButton>
           </div>
         ) : draft ? (
           <div className="space-y-4 pt-1">
-            <IosSection header="Translated summary">
+            <IosSection header={tr("Translated summary")}>
               <div className="flex items-center justify-between gap-2 px-4 py-3">
                 <div>
-                  <p className="text-[12px] font-medium text-muted-foreground">Issue category</p>
-                  <p className="text-[16px] font-semibold text-foreground">{draft.category}</p>
+                  <p className="text-[12px] font-medium text-muted-foreground">{tr("Issue category")}</p>
+                  <p className="text-[16px] font-semibold text-foreground">{localize(draft.category)}</p>
                 </div>
                 <IosBadge>{draft.urgency === "high" ? "Urgent" : draft.urgency === "medium" ? "Medium" : "Low"}</IosBadge>
               </div>
@@ -92,20 +91,20 @@ export function StickyVoiceFab() {
               </div>
             </IosSection>
 
-            <IosSection header="Send to">
+            <IosSection header={tr("Send to")}>
               <IosRow
                 onClick={() => toggleRecipient("partner")}
                 leading={<PartnerLogo partnerId={partner?.id} name={partner?.name} size="sm" />}
-                title={partner?.name ?? "Collection partner"}
-                subtitle="Missed pickups & bin servicing"
+                title={localize(partner?.name ?? "Collection partner")}
+                subtitle={tr("Missed pickups & bin servicing")}
                 selected={draft.sendTo.includes("partner")}
               />
               <IosRow
                 onClick={() => toggleRecipient("lawma")}
                 icon={<Landmark className="size-4" />}
                 iconTone="blue"
-                title="LAWMA Compliance"
-                subtitle="Illegal dumping & drain clearance"
+                title={tr("LAWMA Compliance")}
+                subtitle={tr("Illegal dumping & drain clearance")}
                 selected={draft.sendTo.includes("lawma")}
               />
             </IosSection>
@@ -123,12 +122,8 @@ export function StickyVoiceFab() {
                     }),
                   )
                 }
-              >
-                Send report
-              </IosButton>
-              <IosButton tone="gray" onClick={() => setDraft(null)}>
-                Record again
-              </IosButton>
+              >{tr("Send report")}</IosButton>
+              <IosButton tone="gray" onClick={() => setDraft(null)}>{tr("Record again")}</IosButton>
             </div>
           </div>
         ) : (

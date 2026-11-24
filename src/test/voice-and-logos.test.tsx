@@ -26,6 +26,21 @@ describe("Partner logos", () => {
 });
 
 describe("Local dialect voice agent", () => {
+  it("treats 'truck no come' as a missed pickup even when a gutter is mentioned", () => {
+    const t = "truck no come, gutter don block";
+    const d = buildDialectReport(t, "pcm");
+    expect(d.category).toBe("Missed pickup");
+    expect(d.sendTo).toEqual(["partner", "lawma"]);
+    expect(d.confidence).toBe("low");
+    expect(d.originalTranscript).toBe(t);
+  });
+
+  it("flags uncertainty when nothing matches", () => {
+    const d = buildDialectReport("Something is wrong for our street", "en");
+    expect(d.category).toBe("Other");
+    expect(d.confidence).toBe("low");
+  });
+
   it("translates and routes illegal dumping and drain blockages across Nigerian dialects", () => {
     const yoDraft = buildDialectReport(
       "Àwọn èèyàn ń dà ìdọ̀tí sí etí kòtò omi ní Olowu Street, ó ti dí ojú agbami.",
@@ -62,13 +77,15 @@ describe("Local dialect voice agent", () => {
     expect(screen.getByText(/Èdè Yorùbá/i)).toBeInTheDocument();
 
     // Tap first Yorùbá sample phrase
-    const yoSample = DIALECTS.find((d) => d.code === "yo")!.samples[0]!;
+    const yoSample = DIALECTS.find((d) => d.code === "yo")?.samples[0];
+    if (!yoSample) throw new Error("Yorùbá sample missing");
     fireEvent.click(screen.getByRole("button", { name: new RegExp(yoSample.label) }));
 
     // Trigger translation into report draft
     fireEvent.click(screen.getByRole("button", { name: /Translate & prepare LAWMA report/i }));
     expect(onDraftReady).toHaveBeenCalledTimes(1);
-    const [draft] = onDraftReady.mock.calls[0]!;
+    const draft = onDraftReady.mock.calls[0]?.[0];
+    if (!draft) throw new Error("Expected a voice report");
     expect(draft.category).toBe("Blocked drain");
     expect(draft.sendTo).toEqual(["lawma"]);
   });
@@ -88,7 +105,9 @@ describe("Local dialect voice agent", () => {
     const sheet = screen.getByRole("dialog", { name: "Local Voice Agent" });
     expect(sheet).toBeInTheDocument();
 
-    const pidginSample = DIALECTS[0]!.samples[0]!;
+    fireEvent.click(screen.getByRole("radio", { name: "Pidgin" }));
+    const pidginSample = DIALECTS.find((dialect) => dialect.code === "pcm")?.samples[0];
+    if (!pidginSample) throw new Error("Pidgin sample missing");
     fireEvent.click(screen.getByRole("button", { name: new RegExp(pidginSample.label) }));
     fireEvent.click(screen.getByRole("button", { name: /Translate & prepare LAWMA report/i }));
 

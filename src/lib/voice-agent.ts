@@ -119,47 +119,70 @@ export function getDialect(code: DialectCode): DialectSpec {
  * Classifies and translates a resident's spoken or typed dialect report into a structured
  * LAWMA/PSP dispatch draft while preserving the original verbatim dialect statement.
  */
+export type DialectReport = ReportDraft & {
+  translatedSummary: string;
+  dialectLabel: string;
+  originalTranscript: string;
+  confidence: "high" | "low";
+  reasons: string[];
+};
+
 export function buildDialectReport(
   transcript: string,
   dialect: DialectCode,
   context?: { address?: string | undefined; area?: string | undefined },
-): ReportDraft & { translatedSummary: string; dialectLabel: string } {
+): DialectReport {
   const clean = transcript.trim();
-  const lower = clean.toLowerCase();
+  const lower = clean.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   const spec = getDialect(dialect);
 
-  const isDrain = /(gutter|drain|canal|kòtò|agbami|mmiri|ọwa|magudana|flood)/.test(lower);
-  const isFire = /(burn|fire|smoke|iná|ọkụ|wuta)/.test(lower);
-  const isMissed = /(neva carry|haven'?t come|kò sí ẹni|abịabeghị|ba a kwashe|missed|delay)/.test(lower);
-  const isBin = /(bin|dustbin|àpótí|ite ahịhịa|kwandon)/.test(lower) && !isDrain && !isFire;
+  const isDrain = /(gutter|drain|canal|koto|agbami|mmiri|owa|magudana|flood)/.test(lower);
+  const isFire = /(burn|fire|smoke|ina\b|oku\b|wuta)/.test(lower);
+  const isMissed =
+    /(truck no come|no come carry|dem no carry|neva carry|haven'?t come|missed|delay|ko si eni|won ko wa|won o wa|abiabeghi|abiaghi|ebughi|ba a kwashe|ba ta zo)/.test(lower);
+  const isBin = /(bin|dustbin|apoti|ite ahihia|kwandon)/.test(lower);
+  const isDump = /(dump|pour doti|offload|da idoti|tufuru|zubar)/.test(lower);
 
-  let category: ReportDraft["category"] = "Illegal dumping";
-  let urgency: ReportDraft["urgency"] = "high";
+  const matches = [
+    isMissed && "Missed pickup",
+    isFire && "Burning waste",
+    isDrain && "Blocked drain",
+    isBin && "Overflowing bin",
+    isDump && "Illegal dumping",
+  ].filter((v): v is string => Boolean(v));
+  const reasons =
+    matches.length === 0
+      ? ["No category clearly matches what was said. Please pick the right one."]
+      : matches.length > 1
+        ? [`More than one issue was mentioned (${matches.join(", ")}). Please check the category.`]
+        : [];
+
+  let category: ReportDraft["category"] = "Other" as ReportDraft["category"];
+  let urgency: ReportDraft["urgency"] = "medium";
   let sendTo: ReportDraft["sendTo"] = ["lawma"];
-  let englishAction =
-    "Illegal refuse dumping has been observed at this location and requires urgent enforcement and clearance.";
+  let englishAction = "The resident reported a waste issue. Please confirm the category and details before sending.";
 
-  if (isFire) {
-    category = "Burning waste";
-    urgency = "high";
-    sendTo = ["lawma"];
-    englishAction = "Open waste burning has been reported in this area, posing an immediate air-quality and safety hazard.";
-  } else if (isDrain) {
-    category = "Blocked drain";
-    urgency = "high";
-    sendTo = ["lawma"];
-    englishAction =
-      "Unauthorized dumping into a stormwater drainage channel has been reported, risking blockage and flooding.";
-  } else if (isMissed) {
+  if (isMissed) {
     category = "Missed pickup";
     urgency = "medium";
     sendTo = ["partner", "lawma"];
     englishAction = "Scheduled household collection appears overdue at this residence and needs partner dispatch.";
+  } else if (isFire) {
+    category = "Burning waste";
+    urgency = "high";
+    englishAction = "Open waste burning has been reported in this area, posing an immediate air-quality and safety hazard.";
+  } else if (isDrain) {
+    category = "Blocked drain";
+    urgency = "high";
+    englishAction = "Unauthorized dumping into a stormwater drainage channel has been reported, risking blockage and flooding.";
   } else if (isBin) {
     category = "Overflowing bin";
-    urgency = "medium";
     sendTo = ["partner"];
     englishAction = "The resident's waste bin is overflowing and requires priority servicing.";
+  } else if (isDump) {
+    category = "Illegal dumping";
+    urgency = "high";
+    englishAction = "Illegal refuse dumping has been observed at this location and requires enforcement and clearance.";
   }
 
   const locationHint = context?.address
@@ -168,7 +191,7 @@ export function buildDialectReport(
 
   const translatedSummary = `${locationHint}: ${englishAction}`;
   const title = `${category} (${spec.label} Voice)`;
-  const report = `${translatedSummary}\n\nOriginal ${spec.label} transcript:\n“${clean}”`;
+  const report = `${translatedSummary}\n\nOriginal ${spec.label} transcript:\n“${transcript}”`;
 
   return {
     category,
@@ -178,5 +201,8 @@ export function buildDialectReport(
     report,
     translatedSummary,
     dialectLabel: spec.nativeName,
+    originalTranscript: transcript,
+    confidence: reasons.length ? "low" : "high",
+    reasons,
   };
 }

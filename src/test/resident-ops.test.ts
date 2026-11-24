@@ -14,10 +14,42 @@ import {
   resolveCitizenRemediation,
   resolveStatutoryPartner,
   settleCompoundRoom,
+  settlePendingRooms,
+  LAWMA_USSD_SHORTCODE,
+  LAWMA_USSD_TEL,
   type RemediationCase,
 } from "@/lib/resident-ops";
 
 describe("resident-ops Lagos street workflows", () => {
+  it("settles all five pending rooms in one batch without charging paid rooms", () => {
+    const compound = createDefaultCompound();
+    const result = settlePendingRooms(compound.rooms, 7500);
+    expect(result?.debit).toBe(3750);
+    expect(result?.balance).toBe(3750);
+    expect(result?.settledDuids).toHaveLength(5);
+    expect(result?.rooms.filter((room) => room.paidThisMonth)).toHaveLength(10);
+    expect(compound.rooms.filter((room) => room.paidThisMonth)).toHaveLength(5);
+    expect(evaluateCompoundQuorum(result?.rooms ?? []).drumStatus).toBe("OPEN");
+  });
+
+  it("does not partially settle rooms when the batch balance is insufficient", () => {
+    const compound = createDefaultCompound();
+    expect(settlePendingRooms(compound.rooms, 3749)).toBeNull();
+    expect(compound.rooms.filter((room) => room.paidThisMonth)).toHaveLength(5);
+  });
+
+  it("cannot debit an already-settled compound twice", () => {
+    const result = settlePendingRooms(createDefaultCompound().rooms, 3750);
+    expect(result?.balance).toBe(0);
+    if (!result) throw new Error("Expected a completed settlement");
+    expect(settlePendingRooms(result.rooms, 5000)).toBeNull();
+  });
+
+  it("opens exactly *384*529# with an encoded hash rather than a URL fragment", () => {
+    expect(LAWMA_USSD_SHORTCODE).toBe("*384*529#");
+    expect(LAWMA_USSD_TEL).toBe("tel:*384*529%23");
+  });
+
   it("binds each premise to its statutory Sec. 71 Ward PSP franchise", () => {
     expect(resolveStatutoryPartner("HOME-018")).toBe("PAR-001");
     expect(resolveStatutoryPartner("HOME-042")).toBe("PAR-006");

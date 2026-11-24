@@ -56,7 +56,7 @@ describe("iOS design system components", () => {
     const dialog = screen.getByRole("dialog", { name: "Add money" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(dialog, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

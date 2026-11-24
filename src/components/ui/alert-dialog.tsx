@@ -1,4 +1,5 @@
 import * as React from "react";
+import { phonePortal } from "@/lib/portal-target";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
 >(({ className, ...props }, ref) => (
-  <AlertDialogPortal>
+  <AlertDialogPortal container={phonePortal()}>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
       ref={ref}
